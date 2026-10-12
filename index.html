@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informatika BSB | Sayyora Faxriddinova</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 relative overflow-x-hidden">
+
+  <!-- Orqa fon bezaklari -->
+  <div class="fixed -top-24 -left-24 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="fixed top-1/2 -right-24 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="max-w-4xl mx-auto space-y-6 relative z-10">
+    
+    <!-- HEADER -->
+    <header class="bg-slate-800/80 backdrop-blur-md border border-slate-700/60 p-6 rounded-2xl shadow-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-indigo-600/20 border border-indigo-500/30 rounded-xl flex items-center justify-center text-indigo-400 text-2xl font-bold">
+          💻
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            Informatika BSB
+          </h1>
+          <p class="text-slate-400 text-sm font-medium">Ustoz: <span class="text-indigo-300 font-semibold">Sayyora Faxriddinova</span></p>
+        </div>
+      </div>
+      <button onclick="openAdminModal()" class="w-full sm:w-auto bg-slate-700/80 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 px-5 py-2.5 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-lg">
+        🔐 Admin Kirish
+      </button>
+    </header>
+
+    <!-- O'QUVCHI FORMASI -->
+    <main class="bg-slate-800/60 backdrop-blur-md border border-slate-700/50 p-6 md:p-8 rounded-2xl shadow-xl">
+      <div class="mb-6 border-b border-slate-700/60 pb-4">
+        <h2 class="text-xl font-bold text-slate-100 flex items-center gap-2">
+          📤 BSB Faylini Yuborish
+        </h2>
+        <p class="text-slate-400 text-sm mt-1">Ma'lumotlaringizni to'liq kiriting va faylingizni biriktiring.</p>
+      </div>
+      
+      <form id="submissionForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Ism va Familiya</label>
+            <input type="text" id="studentName" required placeholder="Masalan: Azizbek Rahimov" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">Sinfni tanlang</label>
+            <select id="studentClass" required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 outline-none focus:border-indigo-500">
+              <!-- Bazadan avtomatik keladi -->
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">BSB Fayli</label>
+          <div class="relative border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl p-4 bg-slate-900/40 text-center transition">
+            <input type="file" id="bsbFile" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="updateFileName(this)">
+            <div id="filePrompt" class="space-y-1">
+              <span class="text-3xl">📁</span>
+              <p class="text-sm font-medium text-slate-300">Faylni tanlang yoki shu yerga tashlang</p>
+              <p class="text-xs text-slate-500">PDF, DOCX, ZIP, JPG va boshqalar</p>
+            </div>
+            <p id="fileNameDisplay" class="hidden text-sm font-semibold text-indigo-400 flex items-center justify-center gap-2">
+              📄 <span id="fileNameText"></span>
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Izoh (ixtiyoriy)</label>
+          <textarea id="submissionComment" rows="3" placeholder="O'qituvchiga izohingiz..." class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 rounded-xl font-bold transition shadow-lg flex items-center justify-center gap-2">
+          🚀 BSB Topshirish
+        </button>
+      </form>
+    </main>
+
+    <!-- ADMIN PANEL -->
+    <div id="adminPanel" class="hidden bg-slate-800/90 backdrop-blur-md border border-amber-500/40 p-6 md:p-8 rounded-2xl shadow-2xl space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-amber-400 flex items-center gap-2">
+            ⚡ Admin Boshqaruv Paneli
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Sinflarni boshqarish va kelgan fayllarni yuklab olish</p>
+        </div>
+        <button onclick="closeAdminPanel()" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-3.5 py-1.5 rounded-lg text-sm font-semibold">
+          Panelni Yopish
+        </button>
+      </div>
+
+      <!-- Sinflarni boshqarish -->
+      <div class="bg-amber-500/10 border border-amber-500/20 p-5 rounded-xl space-y-4">
+        <h3 class="font-bold text-amber-300 text-sm">➕ Sinflarni boshqarish</h3>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="newClassInput" placeholder="Masalan: 10-A" class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-slate-100 flex-grow outline-none focus:border-amber-500 text-sm">
+          <button onclick="addNewClass()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm">
+            Qo'shish
+          </button>
+        </div>
+
+        <div class="pt-2">
+          <p class="text-xs text-slate-400 mb-2">Mavjud sinflar:</p>
+          <div id="classListContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Fayllar Ro'yxati -->
+      <div class="space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <h3 class="font-bold text-slate-200">📥 Topshirilgan BSB Fayllari</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400">Sinf bo'yicha:</span>
+            <select id="adminClassFilter" onchange="renderAdminSubmissions()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 outline-none">
+            </select>
+          </div>
+        </div>
+
+        <div id="submissionsList" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ADMIN PAROL MODAL -->
+  <div id="passwordModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="text-center space-y-1">
+        <div class="text-3xl">🔑</div>
+        <h3 class="text-lg font-bold text-slate-100">Admin Kirish</h3>
+        <p class="text-xs text-slate-400">Tizimga kirish uchun parolni kiriting</p>
+      </div>
+
+      <input type="password" id="adminPasswordInput" placeholder="Parol..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-100 text-center font-mono outline-none">
+      
+      <div class="flex gap-2">
+        <button onclick="closeAdminModal()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 rounded-xl font-semibold text-sm">Bekor qilish</button>
+        <button onclick="checkAdminPassword()" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-semibold text-sm">Kirish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sizning Firebase sozlamalaringiz ulandi[cite: 2]
+    const firebaseConfig = {
+      apiKey: "AIzaSyAyE_dUEh0V363Vk4BqfxC91TSU7WLjgGQ",
+      authDomain: "sayyora-6f21d.firebaseapp.com",
+      databaseURL: "https://sayyora-6f21d-default-rtdb.firebaseio.com",
+      projectId: "sayyora-6f21d",
+      storageBucket: "sayyora-6f21d.appfirebasestorage.app",
+      messagingSenderId: "355252530153",
+      appId: "1:355252530153:web:c4351dffe6d9bf7730b978",
+      measurementId: "G-XTQNKM27PV"
+    };
+
+    // Firebase Initsializatsiya
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let globalClasses = {};
+    let globalSubmissions = {};
+
+    // Ma'lumotlarni Real-Time rejimda tinglash
+    db.ref('classes').on('value', (snapshot) => {
+      globalClasses = snapshot.val() || {};
+      populateClassDropdowns();
+    });
+
+    db.ref('submissions').on('value', (snapshot) => {
+      globalSubmissions = snapshot.val() || {};
+      renderAdminSubmissions();
+    });
+
+    function updateFileName(input) {
+      if (input.files && input.files[0]) {
+        document.getElementById('fileNameText').textContent = input.files[0].name;
+        document.getElementById('filePrompt').classList.add('hidden');
+        document.getElementById('fileNameDisplay').classList.remove('hidden');
+        document.getElementById('fileNameDisplay').classList.add('flex');
+      }
+    }
+
+    function populateClassDropdowns() {
+      const studentSelect = document.getElementById('studentClass');
+      const adminSelect = document.getElementById('adminClassFilter');
+      const classListContainer = document.getElementById('classListContainer');
+
+      const classKeys = Object.keys(globalClasses);
+
+      if (classKeys.length === 0) {
+        studentSelect.innerHTML = '<option value="">-- Hali sinflar qo\'shilmagan --</option>';
+        classListContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Sinflar yo\'q.</span>';
+      } else {
+        studentSelect.innerHTML = '<option value="">-- Sinfni tanlang --</option>';
+        classListContainer.innerHTML = '';
+
+        classKeys.forEach(key => {
+          const clsName = globalClasses[key];
+          const chip = document.createElement('div');
+          chip.className = 'bg-slate-900 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2';
+          chip.innerHTML = `
+            <span>${clsName}</span>
+            <button onclick="deleteClass('${key}')" class="text-red-400 hover:text-red-300 font-bold ml-1">×</button>
+          `;
+          classListContainer.appendChild(chip);
+        });
+      }
+
+      adminSelect.innerHTML = '<option value="ALL">Barcha sinflar</option>';
+      classKeys.forEach(key => {
+        const clsName = globalClasses[key];
+        studentSelect.innerHTML += `<option value="${clsName}">${clsName}</option>`;
+        adminSelect.innerHTML += `<option value="${clsName}">${clsName}</option>`;
+      });
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('studentName').value;
+      const studentClass = document.getElementById('studentClass').value;
+      const comment = document.getElementById('submissionComment').value;
+      const fileInput = document.getElementById('bsbFile');
+      const file = fileInput.files[0];
+
+      if (!studentClass) {
+        alert("Iltimos, sinfni tanlang!");
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "⏳ Yuklanmoqda...";
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const newSubmission = {
+          studentName: name,
+          studentClass: studentClass,
+          comment: comment,
+          fileName: file.name,
+          fileData: evt.target.result,
+          date: new Date().toLocaleString('uz-UZ')
+        };
+
+        db.ref('submissions').push(newSubmission, (error) => {
+          submitBtn.disabled = false;
+          submitBtn.innerText = "🚀 BSB Topshirish";
+
+          if (error) {
+            alert("Xatolik yuz berdi: " + error.message);
+          } else {
+            alert("✅ BSB faylingiz bazaga saqlandi va barcha qurilmalarda ko'rinadi!");
+            document.getElementById('submissionForm').reset();
+            document.getElementById('filePrompt').classList.remove('hidden');
+            document.getElementById('fileNameDisplay').classList.add('hidden');
+          }
+        });
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function openAdminModal() {
+      document.getElementById('passwordModal').classList.remove('hidden');
+      document.getElementById('passwordModal').classList.add('flex');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('passwordModal').classList.add('hidden');
+      document.getElementById('passwordModal').classList.remove('flex');
+      document.getElementById('adminPasswordInput').value = '';
+    }
+
+    function checkAdminPassword() {
+      if (document.getElementById('adminPasswordInput').value === "Dilsuzim") {
+        closeAdminModal();
+        document.getElementById('adminPanel').classList.remove('hidden');
+        renderAdminSubmissions();
+      } else {
+        alert("❌ Noto'g'ri parol!");
+      }
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanel').classList.add('hidden');
+    }
+
+    function addNewClass() {
+      const input = document.getElementById('newClassInput');
+      const newCls = input.value.trim();
+
+      if (newCls) {
+        db.ref('classes').push(newCls, () => {
+          input.value = '';
+          alert(`✅ ${newCls} sinfi saqlandi!`);
+        });
+      }
+    }
+
+    function deleteClass(key) {
+      if (confirm("Sinfni o'chirmoqchimisiz?")) {
+        db.ref('classes/' + key).remove();
+      }
+    }
+
+    function renderAdminSubmissions() {
+      const container = document.getElementById('submissionsList');
+      const selectedClass = document.getElementById('adminClassFilter').value;
+
+      container.innerHTML = '';
+
+      const keys = Object.keys(globalSubmissions);
+
+      let filteredKeys = keys;
+      if (selectedClass && selectedClass !== 'ALL') {
+        filteredKeys = keys.filter(k => globalSubmissions[k].studentClass === selectedClass);
+      }
+
+      if (filteredKeys.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-center py-6 text-sm">Hozircha topshirilgan BSB fayllari yo'q.</p>`;
+        return;
+      }
+
+      filteredKeys.reverse().forEach(key => {
+        const sub = globalSubmissions[key];
+        const item = document.createElement('div');
+        item.className = 'border border-slate-700/70 rounded-xl p-4 bg-slate-900/60 flex flex-col sm:flex-row justify-between sm:items-center gap-3';
+        item.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-100">${sub.studentName}</span>
+              <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2 py-0.5 rounded-md font-semibold">${sub.studentClass}</span>
+            </div>
+            <p class="text-xs text-slate-400">Topshirilgan vaqt: ${sub.date}</p>
+            ${sub.comment ? `<p class="text-xs text-slate-300 bg-slate-800/80 p-2 rounded-lg border border-slate-700/50 mt-1 italic">💬 "${sub.comment}"</p>` : ''}
+          </div>
+          <div class="flex items-center gap-2 pt-2 sm:pt-0">
+            <a href="${sub.fileData}" download="${sub.fileName}" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5">
+              📥 Faylni Yuklash
+            </a>
+            <button onclick="deleteSubmission('${key}')" class="bg-red-500/10 text-red-400 border border-red-500/20 p-2 rounded-lg text-xs">
+              🗑️
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function deleteSubmission(key) {
+      if (confirm("Faylni o'chirmoqchimisiz?")) {
+        db.ref('submissions/' + key).remove();
+      }
+    }
+  </script>
+</body>
+</html>
